@@ -1,0 +1,28 @@
+---
+Name: userforms-webhooks
+---
+SilverStripe\UserForms\Model\UserDefinedForm:
+  extensions:
+    - Akqa\SilverStripe\UserFormsWebhooks\Extension\UserDefinedFormExtension
+
+SilverStripe\UserForms\Model\EditableFormField:
+  extensions:
+    - Akqa\SilverStripe\UserFormsWebhooks\Extension\EditableFormFieldExtension
+
+SilverStripe\UserForms\Model\Submission\SubmittedForm:
+  extensions:
+    - Akqa\SilverStripe\UserFormsWebhooks\Extension\SubmittedFormExtension
+
+SilverStripe\Core\Injector\Injector:
+  Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookDispatcher:
+    constructor:
+      client: '%$GuzzleHttp\Client'
+
+---
+Name: userforms-webhooks-elemental
+Only:
+  classexists: 'DNADesign\ElementalUserForms\Model\ElementForm'
+---
+DNADesign\ElementalUserForms\Model\ElementForm:
+  extensions:
+    - Akqa\SilverStripe\UserFormsWebhooks\Extension\UserDefinedFormExtension

@@ -1,0 +1,65 @@
+{
+    "name": "akqa-nz/silverstripe-userforms-webhooks",
+    "description": "Post Silverstripe UserDefinedForm submissions to configurable webhooks with CMS-managed headers, conditions, and request logging",
+    "type": "silverstripe-vendormodule",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "silverstripe",
+        "userforms",
+        "webhook",
+        "api"
+    ],
+    "homepage": "https://github.com/WPP-Public/akqa-nz-silverstripe-userforms-webhooks",
+    "support": {
+        "issues": "https://github.com/WPP-Public/akqa-nz-silverstripe-userforms-webhooks/issues"
+    },
+    "authors": [
+        {
+            "name": "AKQA",
+            "homepage": "https://www.akqa.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "guzzlehttp/guzzle": "^7",
+        "silverstripe/framework": "^5.2",
+        "silverstripe/cms": "^5",
+        "silverstripe/userforms": "^6",
+        "symbiote/silverstripe-gridfieldextensions": "^4",
+        "composer/installers": "^2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6",
+        "silverstripe/recipe-testing": "^3",
+        "squizlabs/php_codesniffer": "^3.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "Akqa\\SilverStripe\\UserFormsWebhooks\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Akqa\\SilverStripe\\UserFormsWebhooks\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.x-dev"
+        }
+    },
+    "scripts": {
+        "lint": "phpcs src/ tests/",
+        "lint-clean": "phpcbf src/ tests/",
+        "test": "phpunit"
+    },
+    "prefer-stable": true,
+    "minimum-stability": "dev",
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "silverstripe/vendor-plugin": true,
+            "phpstan/extension-installer": true
+        }
+    }
+}
