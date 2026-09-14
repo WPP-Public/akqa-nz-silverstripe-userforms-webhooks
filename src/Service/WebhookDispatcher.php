@@ -98,6 +98,7 @@ class WebhookDispatcher
         array $data
     ): void {
         $headers = $webhook->getHeaderMap();
+        $endpointURL = $webhook->getResolvedEndpointURL();
         $requestBody = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         if ($requestBody === false) {
             $requestBody = '{}';
@@ -117,11 +118,11 @@ class WebhookDispatcher
         $result->WebhookID = $webhook->ID;
         $result->SubmittedFormID = $submittedForm->ID;
         $result->WebhookTitle = $webhook->getTitle();
-        $result->EndpointURL = $webhook->EndpointURL;
+        $result->EndpointURL = $endpointURL;
         $result->RequestBody = $requestBody;
 
         try {
-            $response = $this->client->request('POST', $webhook->EndpointURL, $options);
+            $response = $this->client->request('POST', $endpointURL, $options);
             $statusCode = $response->getStatusCode();
             $responseBody = (string) $response->getBody();
 

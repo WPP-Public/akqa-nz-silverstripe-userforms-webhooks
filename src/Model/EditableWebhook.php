@@ -7,6 +7,8 @@ namespace Akqa\SilverStripe\UserFormsWebhooks\Model;
 use SilverStripe\CMS\Controllers\CMSMain;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Controller;
+use SilverStripe\Control\Director;
+use SilverStripe\Core\Kernel;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\FieldList;
@@ -30,6 +32,8 @@ use Symbiote\GridFieldExtensions\GridFieldEditableColumns;
  *
  * @property string $Title
  * @property string $EndpointURL
+ * @property string $EndpointURLDev
+ * @property string $EndpointURLTest
  * @property bool $Enabled
  * @property string $CustomRulesCondition
  * @property int $FormID
@@ -50,6 +54,8 @@ class EditableWebhook extends DataObject
     private static $db = [
         'Title' => 'Varchar(255)',
         'EndpointURL' => 'Varchar(2048)',
+        'EndpointURLDev' => 'Varchar(2048)',
+        'EndpointURLTest' => 'Varchar(2048)',
         'Enabled' => 'Boolean',
         'CustomRulesCondition' => 'Enum("And,Or","And")',
     ];
@@ -89,7 +95,7 @@ class EditableWebhook extends DataObject
 
     private static $summary_fields = [
         'Title' => 'Title',
-        'EndpointURL' => 'Endpoint',
+        'EndpointURL' => 'Live endpoint',
         'Enabled.Nice' => 'Enabled',
     ];
 
@@ -106,6 +112,35 @@ class EditableWebhook extends DataObject
         }
 
         return parent::getTitle() ?: 'Webhook';
+    }
+
+    /**
+     * Resolve the endpoint URL for the current (or given) Silverstripe environment.
+     *
+     * Uses Director::get_environment_type() values: dev, test, live.
+     * Dev/Test fall back to the Live URL when left blank.
+     */
+    public function getResolvedEndpointURL(?string $environment = null): string
+    {
+        $environment = $environment ?: Director::get_environment_type();
+        $live = trim((string) $this->EndpointURL);
+
+        switch ($environment) {
+            case Kernel::DEV:
+                $url = trim((string) $this->EndpointURLDev) ?: $live;
+                break;
+            case Kernel::TEST:
+                $url = trim((string) $this->EndpointURLTest) ?: $live;
+                break;
+            case Kernel::LIVE:
+            default:
+                $url = $live;
+                break;
+        }
+
+        $this->extend('updateResolvedEndpointURL', $url, $environment);
+
+        return $url;
     }
 
     public function getCMSFields(): FieldList
@@ -136,10 +171,24 @@ class EditableWebhook extends DataObject
             ),
             TextField::create(
                 'EndpointURL',
-                _t(__CLASS__ . '.ENDPOINT_URL', 'Endpoint URL')
+                _t(__CLASS__ . '.ENDPOINT_URL_LIVE', 'Live endpoint URL')
             )->setDescription(_t(
-                __CLASS__ . '.ENDPOINT_URL_DESCRIPTION',
-                'HTTPS endpoint that will receive a JSON POST for matching submissions.'
+                __CLASS__ . '.ENDPOINT_URL_LIVE_DESCRIPTION',
+                'Used when SS_ENVIRONMENT_TYPE is live. Also used as the fallback when Dev/Test URLs are blank.'
+            )),
+            TextField::create(
+                'EndpointURLTest',
+                _t(__CLASS__ . '.ENDPOINT_URL_TEST', 'Test endpoint URL')
+            )->setDescription(_t(
+                __CLASS__ . '.ENDPOINT_URL_TEST_DESCRIPTION',
+                'Optional. Used when SS_ENVIRONMENT_TYPE is test. Falls back to the Live URL when blank.'
+            )),
+            TextField::create(
+                'EndpointURLDev',
+                _t(__CLASS__ . '.ENDPOINT_URL_DEV', 'Dev endpoint URL')
+            )->setDescription(_t(
+                __CLASS__ . '.ENDPOINT_URL_DEV_DESCRIPTION',
+                'Optional. Used when SS_ENVIRONMENT_TYPE is dev. Falls back to the Live URL when blank.'
             )),
         ]);
 
@@ -316,7 +365,7 @@ class EditableWebhook extends DataObject
             return false;
         }
 
-        if (!$this->EndpointURL) {
+        if (!$this->getResolvedEndpointURL()) {
             return false;
         }
 
@@ -365,11 +414,21 @@ class EditableWebhook extends DataObject
     {
         $result = parent::validate();
 
-        if ($this->EndpointURL && !filter_var($this->EndpointURL, FILTER_VALIDATE_URL)) {
-            $result->addError(_t(
-                __CLASS__ . '.INVALID_URL',
-                'Please enter a valid endpoint URL.'
-            ));
+        $urlFields = [
+            'EndpointURL' => _t(__CLASS__ . '.ENDPOINT_URL_LIVE', 'Live endpoint URL'),
+            'EndpointURLTest' => _t(__CLASS__ . '.ENDPOINT_URL_TEST', 'Test endpoint URL'),
+            'EndpointURLDev' => _t(__CLASS__ . '.ENDPOINT_URL_DEV', 'Dev endpoint URL'),
+        ];
+
+        foreach ($urlFields as $field => $label) {
+            $value = trim((string) $this->getField($field));
+            if ($value !== '' && !filter_var($value, FILTER_VALIDATE_URL)) {
+                $result->addError(_t(
+                    __CLASS__ . '.INVALID_URL_NAMED',
+                    'Please enter a valid URL for {label}.',
+                    ['label' => $label]
+                ));
+            }
         }
 
         return $result;

@@ -7,6 +7,7 @@ namespace Akqa\SilverStripe\UserFormsWebhooks\Tests\Model;
 use Akqa\SilverStripe\UserFormsWebhooks\Model\EditableWebhook;
 use Akqa\SilverStripe\UserFormsWebhooks\Model\WebhookCondition;
 use Akqa\SilverStripe\UserFormsWebhooks\Model\WebhookHeader;
+use SilverStripe\Core\Kernel;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\UserForms\Model\EditableFormField\EditableTextField;
 use SilverStripe\UserForms\Model\UserDefinedForm;
@@ -119,5 +120,85 @@ class EditableWebhookTest extends SapphireTest
 
         $result = $webhook->validate();
         $this->assertFalse($result->isValid());
+    }
+
+    public function testGetResolvedEndpointURLUsesEnvironmentSpecificUrls(): void
+    {
+        $webhook = EditableWebhook::create([
+            'Title' => 'CRM',
+            'EndpointURL' => 'https://live.example.com/hook',
+            'EndpointURLTest' => 'https://test.example.com/hook',
+            'EndpointURLDev' => 'https://dev.example.com/hook',
+            'Enabled' => true,
+        ]);
+
+        $this->assertSame(
+            'https://live.example.com/hook',
+            $webhook->getResolvedEndpointURL(Kernel::LIVE)
+        );
+        $this->assertSame(
+            'https://test.example.com/hook',
+            $webhook->getResolvedEndpointURL(Kernel::TEST)
+        );
+        $this->assertSame(
+            'https://dev.example.com/hook',
+            $webhook->getResolvedEndpointURL(Kernel::DEV)
+        );
+    }
+
+    public function testGetResolvedEndpointURLFallsBackToLive(): void
+    {
+        $webhook = EditableWebhook::create([
+            'Title' => 'CRM',
+            'EndpointURL' => 'https://live.example.com/hook',
+            'EndpointURLTest' => '',
+            'EndpointURLDev' => '',
+            'Enabled' => true,
+        ]);
+
+        $this->assertSame(
+            'https://live.example.com/hook',
+            $webhook->getResolvedEndpointURL(Kernel::TEST)
+        );
+        $this->assertSame(
+            'https://live.example.com/hook',
+            $webhook->getResolvedEndpointURL(Kernel::DEV)
+        );
+    }
+
+    public function testCanSendRequiresResolvedEndpointForCurrentEnvironment(): void
+    {
+        $webhook = EditableWebhook::create([
+            'Title' => 'CRM',
+            'EndpointURL' => '',
+            'EndpointURLDev' => 'https://dev.example.com/hook',
+            'Enabled' => true,
+        ]);
+
+        /** @var Kernel $kernel */
+        $kernel = \SilverStripe\Core\Injector\Injector::inst()->get(Kernel::class);
+        $previous = $kernel->getEnvironment();
+
+        try {
+            $kernel->setEnvironment(Kernel::LIVE);
+            $this->assertFalse($webhook->canSend([]));
+
+            $kernel->setEnvironment(Kernel::DEV);
+            $this->assertTrue($webhook->canSend([]));
+        } finally {
+            $kernel->setEnvironment($previous);
+        }
+    }
+
+    public function testValidateRejectsInvalidEnvironmentUrls(): void
+    {
+        $webhook = EditableWebhook::create([
+            'Title' => 'CRM',
+            'EndpointURL' => 'https://live.example.com/hook',
+            'EndpointURLDev' => 'not-a-url',
+            'Enabled' => true,
+        ]);
+
+        $this->assertFalse($webhook->validate()->isValid());
     }
 }

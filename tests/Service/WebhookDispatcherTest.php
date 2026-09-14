@@ -15,6 +15,8 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use Psr\Log\NullLogger;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\Core\Kernel;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\UserForms\Model\EditableFormField\EditableEmailField;
 use SilverStripe\UserForms\Model\EditableFormField\EditableTextField;
@@ -231,5 +233,73 @@ class WebhookDispatcherTest extends SapphireTest
         $this->assertSame('Sarah', $body['firstName']);
         $this->assertSame((string) $submittedForm->Created, $body['created']);
         $this->assertSame('Contact-' . $submittedForm->ID, $body['submission']['referenceId']);
+    }
+
+    public function testDispatchPostsToEnvironmentSpecificEndpoint(): void
+    {
+        $form = UserDefinedForm::create([
+            'Title' => 'Contact',
+            'EnableWebhooks' => true,
+        ]);
+        $form->write();
+
+        EditableTextField::create([
+            'Name' => 'FirstName',
+            'Title' => 'First name',
+            'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
+        ])->write();
+
+        EditableWebhook::create([
+            'Title' => 'CRM',
+            'EndpointURL' => 'https://live.example.com/hooks/crm',
+            'EndpointURLTest' => 'https://test.example.com/hooks/crm',
+            'EndpointURLDev' => 'https://dev.example.com/hooks/crm',
+            'Enabled' => true,
+            'FormID' => $form->ID,
+            'FormClass' => UserDefinedForm::class,
+        ])->write();
+
+        $submittedForm = SubmittedForm::create([
+            'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
+        ]);
+        $submittedForm->write();
+
+        SubmittedFormField::create([
+            'ParentID' => $submittedForm->ID,
+            'Name' => 'FirstName',
+            'Title' => 'First name',
+            'Value' => 'Sarah',
+        ])->write();
+
+        $history = [];
+        $mock = new MockHandler([
+            new Response(200, [], 'ok'),
+        ]);
+        $handler = HandlerStack::create($mock);
+        $handler->push(Middleware::history($history));
+        $client = new Client(['handler' => $handler]);
+
+        /** @var Kernel $kernel */
+        $kernel = Injector::inst()->get(Kernel::class);
+        $previous = $kernel->getEnvironment();
+
+        try {
+            $kernel->setEnvironment(Kernel::TEST);
+            $dispatcher = new WebhookDispatcher($client, new WebhookPayloadBuilder(), new NullLogger());
+            $dispatcher->dispatch($submittedForm, ['FirstName' => 'Sarah']);
+        } finally {
+            $kernel->setEnvironment($previous);
+        }
+
+        $this->assertCount(1, $history);
+        $this->assertSame(
+            'https://test.example.com/hooks/crm',
+            (string) $history[0]['request']->getUri()
+        );
+
+        $result = SubmittedWebhook::get()->filter('SubmittedFormID', $submittedForm->ID)->first();
+        $this->assertSame('https://test.example.com/hooks/crm', $result->EndpointURL);
     }
 }

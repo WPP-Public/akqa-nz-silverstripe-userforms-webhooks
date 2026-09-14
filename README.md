@@ -24,12 +24,35 @@ Run `dev/build` after installing.
 1. Open a **User Defined Form** (or Elemental user form) in the CMS.
 2. On the **Webhooks** tab, tick **Enable webhooks for this form**.
 3. Add one or more webhooks with:
-   - Endpoint URL
+   - **Live / Test / Dev endpoint URLs** (mapped to `SS_ENVIRONMENT_TYPE`)
    - Optional HTTP headers
    - Optional **default fields** (static/templated JSON values)
    - Optional custom rules (same style as email recipient conditions)
 4. On each form field, optionally set **Webhook JSON key**. When empty, the field `Name` is converted to lowerCamelCase (e.g. `First_Name` → `firstName`). Use **dot syntax** for nested objects (e.g. `customer.firstName`).
 5. Open a submission under **Submissions** → **Webhooks** to inspect fired hooks, status codes, and bodies.
+
+### Environment-specific endpoints
+
+Each webhook can define different URLs for Silverstripe's three environments:
+
+| CMS field | Environment (`SS_ENVIRONMENT_TYPE`) |
+| --- | --- |
+| Live endpoint URL | `live` |
+| Test endpoint URL | `test` |
+| Dev endpoint URL | `dev` |
+
+If Dev or Test is left blank, the Live URL is used as a fallback. The webhook will not fire when the resolved URL for the current environment is empty.
+
+Customise resolution with `updateResolvedEndpointURL` on `EditableWebhook`:
+
+```php
+public function updateResolvedEndpointURL(string &$url, string $environment): void
+{
+    if ($environment === 'dev') {
+        $url = 'https://webhook.site/debug';
+    }
+}
+```
 
 ### Default fields and variables
 
