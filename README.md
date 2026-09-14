@@ -79,8 +79,8 @@ Flat keys:
 ```json
 {
   "firstName": "Sarah",
-  "lastName": "Grant",
-  "emailAddress": "sarah.grant@walkerscott.co"
+  "lastName": "Johns",
+  "emailAddress": "sarah.johns@akqa.com"
 }
 ```
 
@@ -90,8 +90,8 @@ Nested keys (`customer.firstName`, `customer.lastName`, `customer.emailAddress`)
 {
   "customer": {
     "firstName": "Sarah",
-    "lastName": "Grant",
-    "emailAddress": "sarah.grant@walkerscott.co"
+    "lastName": "Johns",
+    "emailAddress": "sarah.johns@akqa.com"
   },
   "created": "2026-09-14 10:00:00",
   "submission": {
