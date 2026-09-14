@@ -30,7 +30,7 @@ class EditableFormFieldExtensionTest extends SapphireTest
         $this->assertSame('firstName', $field->resolveWebhookKey());
     }
 
-    public function testResolveWebhookKeyUsesOverride(): void
+    public function testResolveWebhookKeySupportsDotSyntaxOverride(): void
     {
         $form = UserDefinedForm::create(['Title' => 'Form']);
         $form->write();
@@ -38,11 +38,12 @@ class EditableFormFieldExtensionTest extends SapphireTest
         $field = EditableTextField::create([
             'Name' => 'First_Name',
             'Title' => 'First name',
-            'WebhookKey' => 'givenName',
+            'WebhookKey' => 'customer.firstName',
             'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
         ]);
         $field->write();
 
-        $this->assertSame('givenName', $field->resolveWebhookKey());
+        $this->assertSame('customer.firstName', $field->resolveWebhookKey());
     }
 }

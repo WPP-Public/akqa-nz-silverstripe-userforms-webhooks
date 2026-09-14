@@ -35,7 +35,8 @@ class EditableFormFieldExtension extends DataExtension
                 _t(__CLASS__ . '.WEBHOOK_KEY', 'Webhook JSON key')
             )->setDescription(_t(
                 __CLASS__ . '.WEBHOOK_KEY_DESCRIPTION',
-                'Optional override for the JSON property name. Defaults to the field name as lowerCamelCase (e.g. firstName).'
+                'Optional override for the JSON property name. Defaults to the field name as lowerCamelCase (e.g. firstName). '
+                . 'Use dot syntax for nested objects (e.g. customer.firstName).'
             ))->setAttribute('placeholder', $this->getDefaultWebhookKey())
         );
     }

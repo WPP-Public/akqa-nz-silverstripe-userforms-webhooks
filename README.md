@@ -27,16 +27,30 @@ Run `dev/build` after installing.
    - Endpoint URL
    - Optional HTTP headers
    - Optional custom rules (same style as email recipient conditions)
-4. On each form field, optionally set **Webhook JSON key**. When empty, the field `Name` is converted to lowerCamelCase (e.g. `First_Name` → `firstName`).
+4. On each form field, optionally set **Webhook JSON key**. When empty, the field `Name` is converted to lowerCamelCase (e.g. `First_Name` → `firstName`). Use **dot syntax** for nested objects (e.g. `customer.firstName`).
 5. Open a submission under **Submissions** → **Webhooks** to inspect fired hooks, status codes, and bodies.
 
 ### Example payload
+
+Flat keys:
 
 ```json
 {
   "firstName": "Sarah",
   "lastName": "Grant",
   "emailAddress": "sarah.grant@walkerscott.co"
+}
+```
+
+Nested keys (`customer.firstName`, `customer.lastName`, `customer.emailAddress`):
+
+```json
+{
+  "customer": {
+    "firstName": "Sarah",
+    "lastName": "Grant",
+    "emailAddress": "sarah.grant@walkerscott.co"
+  }
 }
 ```
 

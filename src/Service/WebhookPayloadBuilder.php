@@ -42,12 +42,48 @@ class WebhookPayloadBuilder
                 continue;
             }
 
-            $payload[$key] = $this->normaliseValue($submittedField->Value);
+            $this->setByPath($payload, $key, $this->normaliseValue($submittedField->Value));
         }
 
         $this->extend('updateWebhookPayload', $payload, $submittedForm);
 
         return $payload;
+    }
+
+    /**
+     * Assign a value into a nested array using dot-path syntax.
+     *
+     * Example: `customer.firstName` becomes `['customer' => ['firstName' => ...]]`.
+     *
+     * @param array<string, mixed> $payload
+     * @param mixed $value
+     */
+    public function setByPath(array &$payload, string $path, $value): void
+    {
+        $segments = array_values(array_filter(
+            explode('.', $path),
+            static fn (string $segment): bool => $segment !== ''
+        ));
+
+        if (!$segments) {
+            return;
+        }
+
+        $current = &$payload;
+        $lastIndex = count($segments) - 1;
+
+        foreach ($segments as $index => $segment) {
+            if ($index === $lastIndex) {
+                $current[$segment] = $value;
+                return;
+            }
+
+            if (!isset($current[$segment]) || !is_array($current[$segment])) {
+                $current[$segment] = [];
+            }
+
+            $current = &$current[$segment];
+        }
     }
 
     /**

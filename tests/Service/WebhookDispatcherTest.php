@@ -37,6 +37,7 @@ class WebhookDispatcherTest extends SapphireTest
             'Name' => 'FirstName',
             'Title' => 'First name',
             'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
         ]);
         $firstName->write();
 
@@ -44,6 +45,7 @@ class WebhookDispatcherTest extends SapphireTest
             'Name' => 'LastName',
             'Title' => 'Last name',
             'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
         ]);
         $lastName->write();
 
@@ -51,6 +53,7 @@ class WebhookDispatcherTest extends SapphireTest
             'Name' => 'EmailAddress',
             'Title' => 'Email',
             'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
         ]);
         $email->write();
 
