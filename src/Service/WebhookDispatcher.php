@@ -69,7 +69,21 @@ class WebhookDispatcher
                 continue;
             }
 
-            $this->sendWebhook($webhook, $submittedForm, $payload, $data);
+            $webhookPayload = $this->payloadBuilder->applyDefaultFields(
+                $payload,
+                $webhook,
+                $submittedForm
+            );
+            $this->extend(
+                'updateWebhookPayloadForWebhook',
+                $webhookPayload,
+                $webhook,
+                $submittedForm,
+                $data,
+                $form
+            );
+
+            $this->sendWebhook($webhook, $submittedForm, $webhookPayload, $data);
         }
     }
 

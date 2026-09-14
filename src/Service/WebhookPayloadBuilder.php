@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Akqa\SilverStripe\UserFormsWebhooks\Service;
 
 use Akqa\SilverStripe\UserFormsWebhooks\Extension\EditableFormFieldExtension;
+use Akqa\SilverStripe\UserFormsWebhooks\Model\EditableWebhook;
 use SilverStripe\Core\Extensible;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\SS_List;
 use SilverStripe\UserForms\Model\EditableFormField;
 use SilverStripe\UserForms\Model\Submission\SubmittedForm;
@@ -46,6 +48,43 @@ class WebhookPayloadBuilder
         }
 
         $this->extend('updateWebhookPayload', $payload, $submittedForm);
+
+        return $payload;
+    }
+
+    /**
+     * Merge webhook default fields into a payload copy.
+     *
+     * Default field names support dot syntax. Values support {{Variable}} tokens.
+     * Defaults are applied after submission fields so they always appear in the payload.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    public function applyDefaultFields(
+        array $payload,
+        EditableWebhook $webhook,
+        SubmittedForm $submittedForm
+    ): array {
+        if (!$webhook->DefaultFields()->count()) {
+            return $payload;
+        }
+
+        /** @var WebhookVariableResolver $resolver */
+        $resolver = Injector::inst()->get(WebhookVariableResolver::class);
+        $variables = $resolver->getVariables($submittedForm, $webhook);
+
+        foreach ($webhook->DefaultFields() as $defaultField) {
+            $name = trim((string) $defaultField->Name);
+            if ($name === '') {
+                continue;
+            }
+
+            $value = $resolver->resolve((string) $defaultField->Value, $variables);
+            $this->setByPath($payload, $name, $this->normaliseValue($value));
+        }
+
+        $this->extend('updateWebhookPayloadWithDefaults', $payload, $webhook, $submittedForm);
 
         return $payload;
     }

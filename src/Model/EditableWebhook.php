@@ -36,6 +36,7 @@ use Symbiote\GridFieldExtensions\GridFieldEditableColumns;
  * @property string $FormClass
  * @method DataObject Form()
  * @method HasManyList<WebhookHeader> Headers()
+ * @method HasManyList<WebhookDefaultField> DefaultFields()
  * @method HasManyList<WebhookCondition> CustomRules()
  */
 class EditableWebhook extends DataObject
@@ -59,21 +60,25 @@ class EditableWebhook extends DataObject
 
     private static $has_many = [
         'Headers' => WebhookHeader::class,
+        'DefaultFields' => WebhookDefaultField::class,
         'CustomRules' => WebhookCondition::class,
     ];
 
     private static $owns = [
         'Headers',
+        'DefaultFields',
         'CustomRules',
     ];
 
     private static $cascade_deletes = [
         'Headers',
+        'DefaultFields',
         'CustomRules',
     ];
 
     private static $cascade_duplicates = [
         'Headers',
+        'DefaultFields',
         'CustomRules',
     ];
 
@@ -141,6 +146,11 @@ class EditableWebhook extends DataObject
         $fields->addFieldToTab('Root.Headers', $this->getHeadersGridField());
         $fields->fieldByName('Root.Headers')?->setTitle(_t(__CLASS__ . '.HEADERS_TAB', 'Headers'));
 
+        $fields->addFieldToTab('Root.DefaultFields', $this->getDefaultFieldsGridField());
+        $fields->fieldByName('Root.DefaultFields')?->setTitle(
+            _t(__CLASS__ . '.DEFAULT_FIELDS_TAB', 'Default Fields')
+        );
+
         $fields->addFieldsToTab('Root.CustomRules', [
             DropdownField::create(
                 'CustomRulesCondition',
@@ -193,6 +203,44 @@ class EditableWebhook extends DataObject
         )->setDescription(_t(
             __CLASS__ . '.HEADERS_DESCRIPTION',
             'Optional HTTP headers sent with each webhook request. Content-Type is set to application/json automatically.'
+        ));
+    }
+
+    protected function getDefaultFieldsGridField(): GridField
+    {
+        $config = GridFieldConfig::create()
+            ->addComponents(
+                new GridFieldButtonRow('before'),
+                new GridFieldToolbarHeader(),
+                new GridFieldAddNewInlineButton(),
+                new GridFieldDeleteAction(),
+                $columns = new GridFieldEditableColumns()
+            );
+
+        $columns->setDisplayFields([
+            'Name' => function ($record, $column, $grid) {
+                return TextField::create(
+                    $column,
+                    _t(WebhookDefaultField::class . '.NAME', 'Field name')
+                )->setAttribute('placeholder', 'submission.referenceId');
+            },
+            'Value' => function ($record, $column, $grid) {
+                return TextField::create(
+                    $column,
+                    _t(WebhookDefaultField::class . '.VALUE', 'Value')
+                )->setAttribute('placeholder', 'Contact-{{ID}}');
+            },
+        ]);
+
+        return GridField::create(
+            'DefaultFields',
+            _t(__CLASS__ . '.DEFAULT_FIELDS', 'Default fields'),
+            $this->DefaultFields(),
+            $config
+        )->setDescription(_t(
+            __CLASS__ . '.DEFAULT_FIELDS_DESCRIPTION',
+            'Extra JSON fields always included in this webhook payload. Field names support dot syntax '
+            . '(e.g. submission.referenceId). Values may include {{ID}} and {{Created}} variables.'
         ));
     }
 

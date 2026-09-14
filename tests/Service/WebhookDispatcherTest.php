@@ -6,6 +6,7 @@ namespace Akqa\SilverStripe\UserFormsWebhooks\Tests\Service;
 
 use Akqa\SilverStripe\UserFormsWebhooks\Model\EditableWebhook;
 use Akqa\SilverStripe\UserFormsWebhooks\Model\SubmittedWebhook;
+use Akqa\SilverStripe\UserFormsWebhooks\Model\WebhookDefaultField;
 use Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookDispatcher;
 use Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookPayloadBuilder;
 use GuzzleHttp\Client;
@@ -162,5 +163,73 @@ class WebhookDispatcherTest extends SapphireTest
 
         $this->assertCount(0, $history);
         $this->assertSame(0, SubmittedWebhook::get()->count());
+    }
+
+    public function testDispatchIncludesDefaultFieldsWithVariables(): void
+    {
+        $form = UserDefinedForm::create([
+            'Title' => 'Contact',
+            'EnableWebhooks' => true,
+        ]);
+        $form->write();
+
+        EditableTextField::create([
+            'Name' => 'FirstName',
+            'Title' => 'First name',
+            'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
+        ])->write();
+
+        $webhook = EditableWebhook::create([
+            'Title' => 'CRM',
+            'EndpointURL' => 'https://example.com/hooks/crm',
+            'Enabled' => true,
+            'FormID' => $form->ID,
+            'FormClass' => UserDefinedForm::class,
+        ]);
+        $webhook->write();
+
+        WebhookDefaultField::create([
+            'ParentID' => $webhook->ID,
+            'Name' => 'created',
+            'Value' => '{{Created}}',
+        ])->write();
+
+        WebhookDefaultField::create([
+            'ParentID' => $webhook->ID,
+            'Name' => 'submission.referenceId',
+            'Value' => 'Contact-{{ID}}',
+        ])->write();
+
+        $submittedForm = SubmittedForm::create([
+            'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
+        ]);
+        $submittedForm->write();
+
+        SubmittedFormField::create([
+            'ParentID' => $submittedForm->ID,
+            'Name' => 'FirstName',
+            'Title' => 'First name',
+            'Value' => 'Sarah',
+        ])->write();
+
+        $history = [];
+        $mock = new MockHandler([
+            new Response(200, [], 'ok'),
+        ]);
+        $handler = HandlerStack::create($mock);
+        $handler->push(Middleware::history($history));
+        $client = new Client(['handler' => $handler]);
+
+        $dispatcher = new WebhookDispatcher($client, new WebhookPayloadBuilder(), new NullLogger());
+        $dispatcher->dispatch($submittedForm, ['FirstName' => 'Sarah']);
+
+        $this->assertCount(1, $history);
+        $body = json_decode((string) $history[0]['request']->getBody(), true);
+
+        $this->assertSame('Sarah', $body['firstName']);
+        $this->assertSame((string) $submittedForm->Created, $body['created']);
+        $this->assertSame('Contact-' . $submittedForm->ID, $body['submission']['referenceId']);
     }
 }

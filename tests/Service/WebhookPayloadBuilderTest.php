@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Akqa\SilverStripe\UserFormsWebhooks\Tests\Service;
 
+use Akqa\SilverStripe\UserFormsWebhooks\Model\EditableWebhook;
+use Akqa\SilverStripe\UserFormsWebhooks\Model\WebhookDefaultField;
 use Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookPayloadBuilder;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\UserForms\Model\EditableFormField\EditableEmailField;
@@ -160,5 +162,52 @@ class WebhookPayloadBuilderTest extends SapphireTest
                 'emailAddress' => 'sarah.grant@walkerscott.co',
             ],
         ], $payload);
+    }
+
+    public function testApplyDefaultFieldsSupportsVariablesAndDotSyntax(): void
+    {
+        $form = UserDefinedForm::create(['Title' => 'Contact']);
+        $form->write();
+
+        $webhook = EditableWebhook::create([
+            'Title' => 'CRM',
+            'EndpointURL' => 'https://example.com/hooks/crm',
+            'Enabled' => true,
+            'FormID' => $form->ID,
+            'FormClass' => UserDefinedForm::class,
+        ]);
+        $webhook->write();
+
+        WebhookDefaultField::create([
+            'ParentID' => $webhook->ID,
+            'Name' => 'created',
+            'Value' => '{{Created}}',
+        ])->write();
+
+        WebhookDefaultField::create([
+            'ParentID' => $webhook->ID,
+            'Name' => 'submission.referenceId',
+            'Value' => 'Contact-{{ID}}',
+        ])->write();
+
+        $submittedForm = SubmittedForm::create([
+            'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
+        ]);
+        $submittedForm->write();
+
+        $builder = new WebhookPayloadBuilder();
+        $payload = $builder->applyDefaultFields(
+            ['firstName' => 'Sarah'],
+            $webhook,
+            $submittedForm
+        );
+
+        $this->assertSame('Sarah', $payload['firstName']);
+        $this->assertSame((string) $submittedForm->Created, $payload['created']);
+        $this->assertSame(
+            'Contact-' . $submittedForm->ID,
+            $payload['submission']['referenceId']
+        );
     }
 }
