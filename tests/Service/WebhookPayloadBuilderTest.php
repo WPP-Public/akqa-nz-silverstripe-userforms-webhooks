@@ -27,7 +27,7 @@ class WebhookPayloadBuilderTest extends SapphireTest
         $this->assertSame($expected, $builder->nameToLowerCamelCase($input));
     }
 
-    public function camelCaseProvider(): array
+    public static function camelCaseProvider(): array
     {
         return [
             'already camel' => ['firstName', 'firstName'],

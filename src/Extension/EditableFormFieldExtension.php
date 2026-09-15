@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace Akqa\SilverStripe\UserFormsWebhooks\Extension;
 
 use Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookPayloadBuilder;
+use SilverStripe\Core\Extension;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\TextField;
-use SilverStripe\ORM\DataExtension;
 
 /**
  * Adds an overridable webhook JSON key to each editable form field.
  *
  * @property string $WebhookKey
- * @extends DataExtension<\SilverStripe\UserForms\Model\EditableFormField>
+ * @extends Extension<\SilverStripe\UserForms\Model\EditableFormField>
  */
-class EditableFormFieldExtension extends DataExtension
+class EditableFormFieldExtension extends Extension
 {
     private static $db = [
         'WebhookKey' => 'Varchar(255)',

@@ -8,7 +8,7 @@ use Akqa\SilverStripe\UserFormsWebhooks\Extension\EditableFormFieldExtension;
 use Akqa\SilverStripe\UserFormsWebhooks\Model\EditableWebhook;
 use SilverStripe\Core\Extensible;
 use SilverStripe\Core\Injector\Injector;
-use SilverStripe\ORM\SS_List;
+use SilverStripe\Model\List\SS_List;
 use SilverStripe\UserForms\Model\EditableFormField;
 use SilverStripe\UserForms\Model\Submission\SubmittedForm;
 use SilverStripe\UserForms\Model\Submission\SubmittedFormField;

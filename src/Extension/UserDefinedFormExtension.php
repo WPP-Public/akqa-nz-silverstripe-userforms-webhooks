@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Akqa\SilverStripe\UserFormsWebhooks\Extension;
 
 use Akqa\SilverStripe\UserFormsWebhooks\Model\EditableWebhook;
+use SilverStripe\Core\Extension;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\Forms\GridField\GridFieldAddNewButton;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
-use SilverStripe\ORM\DataExtension;
 use SilverStripe\ORM\HasManyList;
 
 /**
@@ -18,9 +18,9 @@ use SilverStripe\ORM\HasManyList;
  *
  * @property bool $EnableWebhooks
  * @method HasManyList<EditableWebhook> Webhooks()
- * @extends DataExtension<\SilverStripe\UserForms\Model\UserDefinedForm>
+ * @extends Extension<\SilverStripe\UserForms\Model\UserDefinedForm>
  */
-class UserDefinedFormExtension extends DataExtension
+class UserDefinedFormExtension extends Extension
 {
     private static $db = [
         'EnableWebhooks' => 'Boolean',

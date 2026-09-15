@@ -6,20 +6,20 @@ namespace Akqa\SilverStripe\UserFormsWebhooks\Extension;
 
 use Akqa\SilverStripe\UserFormsWebhooks\Model\SubmittedWebhook;
 use Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookDispatcher;
+use SilverStripe\Core\Extension;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordViewer;
-use SilverStripe\ORM\DataExtension;
 use SilverStripe\ORM\HasManyList;
 
 /**
  * Fires webhooks after processing and surfaces results on submissions.
  *
  * @method HasManyList<SubmittedWebhook> WebhookResults()
- * @extends DataExtension<\SilverStripe\UserForms\Model\Submission\SubmittedForm>
+ * @extends Extension<\SilverStripe\UserForms\Model\Submission\SubmittedForm>
  */
-class SubmittedFormExtension extends DataExtension
+class SubmittedFormExtension extends Extension
 {
     private static $has_many = [
         'WebhookResults' => SubmittedWebhook::class,

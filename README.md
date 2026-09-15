@@ -6,10 +6,12 @@ Webhook endpoints, headers, default fields, and conditional rules are managed in
 
 ## Requirements
 
-- PHP 8.1+
-- Silverstripe CMS 5
-- `silverstripe/userforms` ^6
+- PHP 8.3+
+- Silverstripe CMS 6
+- `silverstripe/userforms` ^7
 - Guzzle 7
+
+For Silverstripe CMS 5, use the `1.x` release line (the `1` branch) instead.
 
 ## Installation
 
