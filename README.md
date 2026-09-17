@@ -30,8 +30,9 @@ Run `dev/build` after installing.
    - Optional HTTP headers
    - Optional **default fields** (static/templated JSON values)
    - Optional custom rules (same style as email recipient conditions)
-4. On each form field, optionally set **Webhook JSON key**. When empty, the field `Name` is converted to lowerCamelCase (e.g. `First_Name` → `firstName`). Use **dot syntax** for nested objects (e.g. `customer.firstName`).
+4. On each form field, optionally set **Webhook JSON key**. When empty, the field `Name` is converted to lowerCamelCase (e.g. `First_Name` → `firstName`). Use **dot syntax** for nested objects (e.g. `customer.firstName`) and **bracket indexes** for arrays (e.g. `responses[0].question`, `responses[1].answer`).
 5. Open a submission under **Submissions** → **Webhooks** to inspect fired hooks, status codes, and bodies.
+6. Use **Trigger** on a webhook result row to manually re-fire that webhook. This skips the form-level enable flag and custom rules, posts using the current webhook configuration, and writes a new result row.
 
 ### Environment-specific endpoints
 
@@ -58,7 +59,7 @@ public function updateResolvedEndpointURL(string &$url, string $environment): vo
 
 ### Default fields and variables
 
-Each webhook can define default fields that are always merged into the JSON payload. Field names support dot syntax. Values may include variables:
+Each webhook can define default fields that are always merged into the JSON payload. Field names support dot and bracket syntax. Values may include variables:
 
 | Variable | Description |
 | --- | --- |
@@ -99,6 +100,26 @@ Nested keys (`customer.firstName`, `customer.lastName`, `customer.emailAddress`)
   "submission": {
     "referenceId": "Contact-123"
   }
+}
+```
+
+Array keys (`responses[0].question`, `responses[0].answer`, `responses[1].question`, `responses[1].answer`):
+
+```json
+{
+  "firstName": "Sarah",
+  "lastName": "Grant",
+  "emailAddress": "sarah.grant@walkerscott.co",
+  "responses": [
+    {
+      "question": "What cover do you need?",
+      "answer": "Family"
+    },
+    {
+      "question": "Preferred start date?",
+      "answer": "2026-10-01"
+    }
+  ]
 }
 ```
 

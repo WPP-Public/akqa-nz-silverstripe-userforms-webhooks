@@ -55,7 +55,7 @@ class WebhookPayloadBuilder
     /**
      * Merge webhook default fields into a payload copy.
      *
-     * Default field names support dot syntax. Values support {{Variable}} tokens.
+     * Default field names support dot and bracket syntax. Values support {{Variable}} tokens.
      * Defaults are applied after submission fields so they always appear in the payload.
      *
      * @param array<string, mixed> $payload
@@ -90,39 +90,77 @@ class WebhookPayloadBuilder
     }
 
     /**
-     * Assign a value into a nested array using dot-path syntax.
+     * Assign a value into a nested array using dot and bracket-path syntax.
      *
-     * Example: `customer.firstName` becomes `['customer' => ['firstName' => ...]]`.
+     * Examples:
+     * - `customer.firstName` → `['customer' => ['firstName' => ...]]`
+     * - `responses[0].question` → `['responses' => [['question' => ...]]]`
      *
      * @param array<string, mixed> $payload
      * @param mixed $value
      */
     public function setByPath(array &$payload, string $path, $value): void
     {
-        $segments = array_values(array_filter(
-            explode('.', $path),
-            static fn (string $segment): bool => $segment !== ''
-        ));
-
-        if (!$segments) {
+        $tokens = $this->parsePath($path);
+        if (!$tokens) {
             return;
         }
 
         $current = &$payload;
-        $lastIndex = count($segments) - 1;
+        $lastIndex = count($tokens) - 1;
 
-        foreach ($segments as $index => $segment) {
+        foreach ($tokens as $index => $token) {
             if ($index === $lastIndex) {
-                $current[$segment] = $value;
+                $current[$token] = $value;
                 return;
             }
 
-            if (!isset($current[$segment]) || !is_array($current[$segment])) {
-                $current[$segment] = [];
+            if (!isset($current[$token]) || !is_array($current[$token])) {
+                $current[$token] = [];
             }
 
-            $current = &$current[$segment];
+            $current = &$current[$token];
         }
+    }
+
+    /**
+     * Tokenise a webhook path into string keys and integer array indexes.
+     *
+     * @return list<string|int>
+     */
+    public function parsePath(string $path): array
+    {
+        $tokens = [];
+        $segments = explode('.', $path);
+
+        foreach ($segments as $segment) {
+            if ($segment === '') {
+                continue;
+            }
+
+            if (!preg_match('/^([^\[\]]*)((?:\[\d+\])*)$/', $segment, $matches)) {
+                $tokens[] = $segment;
+                continue;
+            }
+
+            $key = $matches[1];
+            $brackets = $matches[2];
+
+            if ($key !== '') {
+                $tokens[] = $key;
+            }
+
+            if ($brackets === '') {
+                continue;
+            }
+
+            preg_match_all('/\[(\d+)\]/', $brackets, $indexes);
+            foreach ($indexes[1] as $arrayIndex) {
+                $tokens[] = (int) $arrayIndex;
+            }
+        }
+
+        return $tokens;
     }
 
     /**
