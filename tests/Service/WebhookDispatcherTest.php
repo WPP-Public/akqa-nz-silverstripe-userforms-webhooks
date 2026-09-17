@@ -302,4 +302,99 @@ class WebhookDispatcherTest extends SapphireTest
         $result = SubmittedWebhook::get()->filter('SubmittedFormID', $submittedForm->ID)->first();
         $this->assertSame('https://test.example.com/hooks/crm', $result->EndpointURL);
     }
+
+    public function testRedispatchCreatesNewResultAndSkipsEnableFlag(): void
+    {
+        $form = UserDefinedForm::create([
+            'Title' => 'Contact',
+            'EnableWebhooks' => false,
+        ]);
+        $form->write();
+
+        EditableTextField::create([
+            'Name' => 'FirstName',
+            'Title' => 'First name',
+            'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
+        ])->write();
+
+        $webhook = EditableWebhook::create([
+            'Title' => 'CRM',
+            'EndpointURL' => 'https://example.com/hooks/crm',
+            'Enabled' => true,
+            'FormID' => $form->ID,
+            'FormClass' => UserDefinedForm::class,
+        ]);
+        $webhook->write();
+
+        $submittedForm = SubmittedForm::create([
+            'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
+        ]);
+        $submittedForm->write();
+
+        SubmittedFormField::create([
+            'ParentID' => $submittedForm->ID,
+            'Name' => 'FirstName',
+            'Title' => 'First name',
+            'Value' => 'Sarah',
+        ])->write();
+
+        $previous = SubmittedWebhook::create([
+            'WebhookID' => $webhook->ID,
+            'SubmittedFormID' => $submittedForm->ID,
+            'WebhookTitle' => 'CRM',
+            'EndpointURL' => 'https://example.com/hooks/crm',
+            'StatusCode' => 500,
+            'Success' => false,
+            'RequestBody' => '{}',
+            'ResponseBody' => 'error',
+        ]);
+        $previous->write();
+
+        $history = [];
+        $mock = new MockHandler([
+            new Response(200, [], '{"retried":true}'),
+        ]);
+        $handler = HandlerStack::create($mock);
+        $handler->push(Middleware::history($history));
+        $client = new Client(['handler' => $handler]);
+
+        $dispatcher = new WebhookDispatcher($client, new WebhookPayloadBuilder(), new NullLogger());
+        $result = $dispatcher->redispatch($previous);
+
+        $this->assertCount(1, $history);
+        $this->assertNotSame($previous->ID, $result->ID);
+        $this->assertTrue((bool) $result->Success);
+        $this->assertSame(200, $result->StatusCode);
+        $this->assertSame($submittedForm->ID, $result->SubmittedFormID);
+        $this->assertSame($webhook->ID, $result->WebhookID);
+        $this->assertSame(2, SubmittedWebhook::get()->filter('SubmittedFormID', $submittedForm->ID)->count());
+
+        $body = json_decode((string) $history[0]['request']->getBody(), true);
+        $this->assertSame('Sarah', $body['firstName']);
+    }
+
+    public function testRedispatchThrowsWhenWebhookMissing(): void
+    {
+        $this->expectException(\Exception::class);
+
+        $submittedForm = SubmittedForm::create();
+        $submittedForm->write();
+
+        $orphan = SubmittedWebhook::create([
+            'WebhookID' => 0,
+            'SubmittedFormID' => $submittedForm->ID,
+            'WebhookTitle' => 'Gone',
+            'EndpointURL' => 'https://example.com/hooks/crm',
+        ]);
+        $orphan->write();
+
+        $dispatcher = new WebhookDispatcher(
+            new Client(['handler' => HandlerStack::create(new MockHandler())]),
+            new WebhookPayloadBuilder(),
+            new NullLogger()
+        );
+        $dispatcher->redispatch($orphan);
+    }
 }
