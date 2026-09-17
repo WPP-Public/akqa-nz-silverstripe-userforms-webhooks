@@ -105,4 +105,27 @@ class SubmittedWebhook extends DataObject
     {
         return (bool) $this->SubmittedForm()->canDelete($member);
     }
+
+    /**
+     * Whether a CMS user may manually re-fire this webhook result.
+     */
+    public function canTrigger($member = null): bool
+    {
+        $webhook = $this->Webhook();
+        if (!$webhook || !$webhook->exists() || !$webhook->getResolvedEndpointURL()) {
+            return false;
+        }
+
+        $submittedForm = $this->SubmittedForm();
+        if (!$submittedForm || !$submittedForm->exists()) {
+            return false;
+        }
+
+        $parent = $submittedForm->Parent();
+        if ($parent && $parent->hasMethod('canEdit')) {
+            return (bool) $parent->canEdit($member);
+        }
+
+        return (bool) $submittedForm->canView($member);
+    }
 }

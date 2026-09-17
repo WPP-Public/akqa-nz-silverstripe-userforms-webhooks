@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Akqa\SilverStripe\UserFormsWebhooks\Extension;
 
+use Akqa\SilverStripe\UserFormsWebhooks\Forms\GridField\GridFieldTriggerWebhookAction;
 use Akqa\SilverStripe\UserFormsWebhooks\Model\SubmittedWebhook;
 use Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookDispatcher;
 use SilverStripe\Core\Extension;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\GridField\GridField;
+use SilverStripe\Forms\GridField\GridField_ActionMenu;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordViewer;
 use SilverStripe\ORM\HasManyList;
 
@@ -57,6 +59,8 @@ class SubmittedFormExtension extends Extension
         $fields->removeByName('WebhookResults');
 
         $config = GridFieldConfig_RecordViewer::create();
+        $config->addComponent(new GridFieldTriggerWebhookAction());
+        $config->addComponent(GridField_ActionMenu::create());
         $grid = GridField::create(
             'WebhookResults',
             _t(__CLASS__ . '.WEBHOOK_RESULTS', 'Webhook results'),
