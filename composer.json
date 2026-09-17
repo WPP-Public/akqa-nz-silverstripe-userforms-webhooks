@@ -41,12 +41,20 @@
     "autoload-dev": {
         "psr-4": {
             "Akqa\\SilverStripe\\UserFormsWebhooks\\Tests\\": "tests/"
-        }
+        },
+        "classmap": [
+            "app/src/Page.php",
+            "app/src/PageController.php"
+        ]
     },
     "extra": {
         "branch-alias": {
             "dev-main": "2.x-dev"
-        }
+        },
+        "project-files-installed": [
+            "behat.yml",
+            "phpunit.xml.dist"
+        ]
     },
     "scripts": {
         "lint": "phpcs src/ tests/",

@@ -1,7 +1,9 @@
 /vendor/
 /resources/
+/public/
 composer.lock
 .phpunit.result.cache
 .idea/
 .vscode/
 *.DS_Store
+behat.yml

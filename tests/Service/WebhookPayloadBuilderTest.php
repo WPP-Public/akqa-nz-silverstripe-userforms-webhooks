@@ -145,7 +145,7 @@ class WebhookPayloadBuilderTest extends SapphireTest
         $this->assertSame($expected, $builder->parsePath($input));
     }
 
-    public function parsePathProvider(): array
+    public static function parsePathProvider(): array
     {
         return [
             'flat' => ['firstName', ['firstName']],
