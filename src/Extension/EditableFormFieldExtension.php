@@ -29,14 +29,15 @@ class EditableFormFieldExtension extends DataExtension
         }
 
         $fields->addFieldToTab(
-            'Root.Main',
+            'Root.Webhooks',
             TextField::create(
                 'WebhookKey',
                 _t(__CLASS__ . '.WEBHOOK_KEY', 'Webhook JSON key')
             )->setDescription(_t(
                 __CLASS__ . '.WEBHOOK_KEY_DESCRIPTION',
                 'Optional override for the JSON property name. Defaults to the field name as lowerCamelCase (e.g. firstName). '
-                . 'Use dot syntax for nested objects (e.g. customer.firstName).'
+                . 'Use dot syntax for nested objects (e.g. customer.firstName) and bracket indexes for arrays '
+                . '(e.g. responses[0].question, responses[0].answer).'
             ))->setAttribute('placeholder', $this->getDefaultWebhookKey())
         );
     }
