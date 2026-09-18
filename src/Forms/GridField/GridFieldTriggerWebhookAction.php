@@ -81,8 +81,11 @@ class GridFieldTriggerWebhookAction implements
     public function getColumnContent($gridField, $record, $columnName): ?string
     {
         $field = $this->getTriggerAction($gridField, $record, $columnName);
+        if (!$field) {
+            return null;
+        }
 
-        return $field ? $field->Field() : null;
+        return (string) $field->Field();
     }
 
     /**
