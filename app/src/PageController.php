@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use SilverStripe\Dev\TestOnly;
+
 /**
  * Minimal PageController stub so CMS can boot during module PHPUnit runs.
  */
-class PageController extends \SilverStripe\CMS\Controllers\ContentController
+class PageController extends \SilverStripe\CMS\Controllers\ContentController implements TestOnly
 {
 }
