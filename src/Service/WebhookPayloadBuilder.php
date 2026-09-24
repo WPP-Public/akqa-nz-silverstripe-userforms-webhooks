@@ -55,7 +55,8 @@ class WebhookPayloadBuilder
     /**
      * Merge webhook default fields into a payload copy.
      *
-     * Default field names support dot and bracket syntax. Values support {{Variable}} tokens.
+     * Default field names support dot and bracket syntax. Values support {{Variable}}
+     * tokens including allowlisted {{env.NAME}} environment variables.
      * Defaults are applied after submission fields so they always appear in the payload.
      *
      * @param array<string, mixed> $payload

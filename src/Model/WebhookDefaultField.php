@@ -13,8 +13,8 @@ use SilverStripe\ORM\DataObject;
  * Static / templated field always included in a webhook payload.
  *
  * Field names support dot and bracket syntax (e.g. submission.referenceId,
- * responses[0].question). Values may include variables such as {{ID}} and
- * {{Created}}.
+ * responses[0].question). Values may include variables such as {{ID}},
+ * {{Created}}, and allowlisted environment variables via {{env.NAME}}.
  *
  * @property string $Name
  * @property string $Value
