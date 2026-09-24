@@ -12,6 +12,10 @@ use SilverStripe\ORM\DataObject;
 /**
  * Optional HTTP header sent with a webhook request.
  *
+ * Values may include allowlisted environment variables via {{env.NAME}}, using
+ * the same allowed_env_variables configuration as default fields. When a
+ * submission is available, {{ID}} and {{Created}} are also resolved.
+ *
  * @property string $Name
  * @property string $Value
  * @property int $ParentID

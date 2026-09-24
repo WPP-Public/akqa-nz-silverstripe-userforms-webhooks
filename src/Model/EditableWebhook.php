@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Akqa\SilverStripe\UserFormsWebhooks\Model;
 
+use Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookVariableResolver;
 use SilverStripe\CMS\Controllers\CMSMain;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\Director;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Kernel;
 use SilverStripe\Forms\CheckboxField;
 use SilverStripe\Forms\DropdownField;
@@ -23,6 +25,7 @@ use SilverStripe\Forms\TextField;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\HasManyList;
 use SilverStripe\ORM\ValidationResult;
+use SilverStripe\UserForms\Model\Submission\SubmittedForm;
 use SilverStripe\UserForms\Model\UserDefinedForm;
 use Symbiote\GridFieldExtensions\GridFieldAddNewInlineButton;
 use Symbiote\GridFieldExtensions\GridFieldEditableColumns;
@@ -251,7 +254,8 @@ class EditableWebhook extends DataObject
             $config
         )->setDescription(_t(
             __CLASS__ . '.HEADERS_DESCRIPTION',
-            'Optional HTTP headers sent with each webhook request. Content-Type is set to application/json automatically.'
+            'Optional HTTP headers sent with each webhook request. Content-Type is set to application/json '
+            . 'automatically. Values may include allowlisted {{env.NAME}} variables.'
         ));
     }
 
@@ -390,20 +394,32 @@ class EditableWebhook extends DataObject
     }
 
     /**
+     * Build the HTTP header map for this webhook.
+     *
+     * Header values support allowlisted {{env.NAME}} tokens. When a submission
+     * is provided, built-in variables such as {{ID}} and {{Created}} are also
+     * available.
+     *
      * @return array<string, string>
      */
-    public function getHeaderMap(): array
+    public function getHeaderMap(?SubmittedForm $submittedForm = null): array
     {
         $headers = [
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
         ];
 
+        /** @var WebhookVariableResolver $resolver */
+        $resolver = Injector::inst()->get(WebhookVariableResolver::class);
+        $variables = $submittedForm
+            ? $resolver->getVariables($submittedForm, $this)
+            : $resolver->getAllowedEnvVariables();
+
         foreach ($this->Headers() as $header) {
             if (!$header->Name) {
                 continue;
             }
-            $headers[$header->Name] = (string) $header->Value;
+            $headers[$header->Name] = $resolver->resolve((string) $header->Value, $variables);
         }
 
         $this->extend('updateWebhookHeaders', $headers);

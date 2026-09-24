@@ -7,6 +7,9 @@ namespace Akqa\SilverStripe\UserFormsWebhooks\Tests\Model;
 use Akqa\SilverStripe\UserFormsWebhooks\Model\EditableWebhook;
 use Akqa\SilverStripe\UserFormsWebhooks\Model\WebhookCondition;
 use Akqa\SilverStripe\UserFormsWebhooks\Model\WebhookHeader;
+use Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookVariableResolver;
+use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Environment;
 use SilverStripe\Core\Kernel;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\UserForms\Model\EditableFormField\EditableTextField;
@@ -108,6 +111,36 @@ class EditableWebhookTest extends SapphireTest
         $headers = $webhook->getHeaderMap();
         $this->assertSame('application/json', $headers['Content-Type']);
         $this->assertSame('secret', $headers['X-Api-Key']);
+    }
+
+    public function testGetHeaderMapResolvesAllowlistedEnvVariables(): void
+    {
+        Config::modify()->set(WebhookVariableResolver::class, 'allowed_env_variables', [
+            'WEBHOOK_TEST_API_KEY',
+        ]);
+        Environment::setEnv('WEBHOOK_TEST_API_KEY', 'env-secret');
+        Environment::setEnv('SS_DATABASE_USERNAME', 'db-user');
+
+        $webhook = EditableWebhook::create([
+            'Title' => 'CRM',
+            'EndpointURL' => 'https://example.com/hook',
+        ]);
+        $webhook->write();
+
+        WebhookHeader::create([
+            'ParentID' => $webhook->ID,
+            'Name' => 'Authorization',
+            'Value' => 'Bearer {{env.WEBHOOK_TEST_API_KEY}}',
+        ])->write();
+        WebhookHeader::create([
+            'ParentID' => $webhook->ID,
+            'Name' => 'X-Db-User',
+            'Value' => '{{env.SS_DATABASE_USERNAME}}',
+        ])->write();
+
+        $headers = $webhook->getHeaderMap();
+        $this->assertSame('Bearer env-secret', $headers['Authorization']);
+        $this->assertSame('{{env.SS_DATABASE_USERNAME}}', $headers['X-Db-User']);
     }
 
     public function testValidateRejectsInvalidUrl(): void

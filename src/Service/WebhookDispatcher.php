@@ -209,7 +209,7 @@ class WebhookDispatcher
         array $payload,
         array $data
     ): SubmittedWebhook {
-        $headers = $webhook->getHeaderMap();
+        $headers = $webhook->getHeaderMap($submittedForm);
         $endpointURL = $webhook->getResolvedEndpointURL();
         $requestBody = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         if ($requestBody === false) {
