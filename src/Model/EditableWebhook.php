@@ -289,8 +289,8 @@ class EditableWebhook extends DataObject
         )->setDescription(_t(
             __CLASS__ . '.DEFAULT_FIELDS_DESCRIPTION',
             'Extra JSON fields always included in this webhook payload. Field names support dot and bracket '
-            . 'syntax (e.g. submission.referenceId, responses[0].question). Values may include {{ID}} and '
-            . '{{Created}} variables.'
+            . 'syntax (e.g. submission.referenceId, responses[0].question). Values may include {{ID}}, '
+            . '{{Created}}, and allowlisted {{env.NAME}} variables.'
         ));
     }
 

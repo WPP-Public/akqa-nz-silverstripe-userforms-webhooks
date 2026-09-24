@@ -63,6 +63,17 @@ Each webhook can define default fields that are always merged into the JSON payl
 | --- | --- |
 | `{{ID}}` | Submitted form ID |
 | `{{Created}}` | Submission created datetime |
+| `{{env.NAME}}` | Value of an allowlisted environment variable named `NAME` |
+
+Environment variables are **not** available by default. Projects must explicitly allow each name via YAML so secrets such as `SS_DATABASE_USERNAME` cannot be leaked into webhook payloads:
+
+```yaml
+Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookVariableResolver:
+  allowed_env_variables:
+    - MY_WEBHOOK_API_KEY
+```
+
+Only names listed in `allowed_env_variables` resolve. References to any other env name (for example `{{env.SS_DATABASE_PASSWORD}}`) are left unchanged in the payload.
 
 Examples:
 
@@ -70,6 +81,7 @@ Examples:
 | --- | --- | --- |
 | `created` | `{{Created}}` | `"created": "2026-09-14 10:00:00"` |
 | `submission.referenceId` | `Contact-{{ID}}` | `"submission": { "referenceId": "Contact-123" }` |
+| `apiKey` | `{{env.MY_WEBHOOK_API_KEY}}` | `"apiKey": "…"` (when allowlisted) |
 
 Default fields are applied after form submission values, so they are always present on the payload for that webhook.
 
