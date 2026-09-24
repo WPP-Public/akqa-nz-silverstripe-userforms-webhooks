@@ -83,7 +83,7 @@ Flat keys:
 {
   "firstName": "Sarah",
   "lastName": "Johns",
-  "emailAddress": "sarah.johns@akqa.com"
+  "emailAddress": "sarah.johns@example.com"
 }
 ```
 
@@ -94,7 +94,7 @@ Nested keys (`customer.firstName`, `customer.lastName`, `customer.emailAddress`)
   "customer": {
     "firstName": "Sarah",
     "lastName": "Johns",
-    "emailAddress": "sarah.johns@akqa.com"
+    "emailAddress": "sarah.johns@example.com"
   },
   "created": "2026-09-14 10:00:00",
   "submission": {
@@ -108,12 +108,12 @@ Array keys (`responses[0].question`, `responses[0].answer`, `responses[1].questi
 ```json
 {
   "firstName": "Sarah",
-  "lastName": "Grant",
-  "emailAddress": "sarah.grant@walkerscott.co",
+  "lastName": "Johns",
+  "emailAddress": "sarah.johns@example.com",
   "responses": [
     {
-      "question": "What cover do you need?",
-      "answer": "Family"
+      "question": "How old are you?",
+      "answer": "25 - 35"
     },
     {
       "question": "Preferred start date?",
