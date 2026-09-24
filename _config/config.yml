@@ -1,8 +1,8 @@
 ---
 Name: userforms-webhooks-config
 ---
-# Environment variables referenced as {{env.NAME}} in default field values are
-# only resolved when listed under allowed_env_variables. Projects should add
-# explicit allowlist entries; nothing is exposed by default.
+# Environment variables referenced as {{env.NAME}} in default field and header
+# values are only resolved when listed under allowed_env_variables. Projects
+# should add explicit allowlist entries; nothing is exposed by default.
 Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookVariableResolver:
   allowed_env_variables: []

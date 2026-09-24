@@ -57,9 +57,9 @@ public function updateResolvedEndpointURL(string &$url, string $environment): vo
 }
 ```
 
-### Default fields and variables
+### Default fields, headers, and variables
 
-Each webhook can define default fields that are always merged into the JSON payload. Field names support dot and bracket syntax. Values may include variables:
+Each webhook can define default fields that are always merged into the JSON payload, and optional HTTP headers. Field names support dot and bracket syntax. Default field and header values may include variables:
 
 | Variable | Description |
 | --- | --- |
@@ -67,7 +67,7 @@ Each webhook can define default fields that are always merged into the JSON payl
 | `{{Created}}` | Submission created datetime |
 | `{{env.NAME}}` | Value of an allowlisted environment variable named `NAME` |
 
-Environment variables are **not** available by default. Projects must explicitly allow each name via YAML so secrets such as `SS_DATABASE_USERNAME` cannot be leaked into webhook payloads:
+Environment variables are **not** available by default. Projects must explicitly allow each name via YAML so secrets such as `SS_DATABASE_USERNAME` cannot be leaked into webhook payloads or headers:
 
 ```yaml
 Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookVariableResolver:
@@ -75,15 +75,16 @@ Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookVariableResolver:
     - MY_WEBHOOK_API_KEY
 ```
 
-Only names listed in `allowed_env_variables` resolve. References to any other env name (for example `{{env.SS_DATABASE_PASSWORD}}`) are left unchanged in the payload.
+Only names listed in `allowed_env_variables` resolve. References to any other env name (for example `{{env.SS_DATABASE_PASSWORD}}`) are left unchanged.
 
 Examples:
 
-| Field name | Value | Result |
+| Field name / header | Value | Result |
 | --- | --- | --- |
 | `created` | `{{Created}}` | `"created": "2026-09-14 10:00:00"` |
 | `submission.referenceId` | `Contact-{{ID}}` | `"submission": { "referenceId": "Contact-123" }` |
 | `apiKey` | `{{env.MY_WEBHOOK_API_KEY}}` | `"apiKey": "…"` (when allowlisted) |
+| Header `Authorization` | `Bearer {{env.MY_WEBHOOK_API_KEY}}` | `Authorization: Bearer …` (when allowlisted) |
 
 Default fields are applied after form submission values, so they are always present on the payload for that webhook.
 

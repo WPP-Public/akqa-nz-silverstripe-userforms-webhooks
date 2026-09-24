@@ -12,7 +12,7 @@ use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\UserForms\Model\Submission\SubmittedForm;
 
 /**
- * Resolves {{Variable}} placeholders for webhook default field values.
+ * Resolves {{Variable}} placeholders for webhook default field and header values.
  *
  * Supports built-in variables such as {{ID}} and {{Created}}, plus allowlisted
  * environment variables via {{env.NAME}}.
@@ -36,8 +36,9 @@ class WebhookVariableResolver
 
     /**
      * Environment variable names that may be referenced as {{env.NAME}} in
-     * default field values. Only names listed here are resolved; others are
-     * left unchanged so secrets such as SS_DATABASE_USERNAME cannot be exposed.
+     * default field and header values. Only names listed here are resolved;
+     * others are left unchanged so secrets such as SS_DATABASE_USERNAME cannot
+     * be exposed.
      *
      * Configure in YAML, for example:
      *
