@@ -243,6 +243,14 @@ class WebhookPayloadBuilder
             }
         }
 
+        if ($value === null) {
+            return '';
+        }
+
+        if (is_scalar($value)) {
+            return (string) $value;
+        }
+
         return $value;
     }
 }
