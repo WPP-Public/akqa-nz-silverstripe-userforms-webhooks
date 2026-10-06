@@ -109,8 +109,9 @@ class WebhookCondition extends DataObject
             return $args[1]['Parent'];
         }
 
-        if (Controller::has_curr() && Controller::curr() instanceof CMSMain) {
-            return Controller::curr()->currentRecord();
+        $controller = Controller::curr();
+        if ($controller instanceof CMSMain) {
+            return $controller->currentRecord();
         }
 
         return null;

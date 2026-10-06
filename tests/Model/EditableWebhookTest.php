@@ -143,6 +143,12 @@ class EditableWebhookTest extends SapphireTest
         $this->assertSame('{{env.SS_DATABASE_USERNAME}}', $headers['X-Db-User']);
     }
 
+    public function testCanCreateDoesNotCrashWithoutCurrentController(): void
+    {
+        $webhook = EditableWebhook::create();
+        $this->assertIsBool($webhook->canCreate());
+    }
+
     public function testValidateRejectsInvalidUrl(): void
     {
         $webhook = EditableWebhook::create([
