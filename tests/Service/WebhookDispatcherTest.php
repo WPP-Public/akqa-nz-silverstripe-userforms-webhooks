@@ -9,12 +9,15 @@ use Akqa\SilverStripe\UserFormsWebhooks\Model\SubmittedWebhook;
 use Akqa\SilverStripe\UserFormsWebhooks\Model\WebhookDefaultField;
 use Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookDispatcher;
 use Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookPayloadBuilder;
+use Akqa\SilverStripe\UserFormsWebhooks\Service\WebhookVariableResolver;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use Psr\Log\NullLogger;
+use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Kernel;
 use SilverStripe\Dev\SapphireTest;
@@ -233,6 +236,83 @@ class WebhookDispatcherTest extends SapphireTest
         $this->assertSame('Sarah', $body['firstName']);
         $this->assertSame((string) $submittedForm->Created, $body['created']);
         $this->assertSame('Contact-' . $submittedForm->ID, $body['submission']['referenceId']);
+    }
+
+    public function testDispatchRedactsEnvValuesInStoredRequestBody(): void
+    {
+        Config::modify()->set(WebhookVariableResolver::class, 'allowed_env_variables', [
+            'WEBHOOK_TEST_API_KEY',
+        ]);
+        Environment::setEnv('WEBHOOK_TEST_API_KEY', 'secret-value');
+
+        $form = UserDefinedForm::create([
+            'Title' => 'Contact',
+            'EnableWebhooks' => true,
+        ]);
+        $form->write();
+
+        EditableTextField::create([
+            'Name' => 'FirstName',
+            'Title' => 'First name',
+            'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
+        ])->write();
+
+        $webhook = EditableWebhook::create([
+            'Title' => 'CRM',
+            'EndpointURL' => 'https://example.com/hooks/crm',
+            'Enabled' => true,
+            'FormID' => $form->ID,
+            'FormClass' => UserDefinedForm::class,
+        ]);
+        $webhook->write();
+
+        WebhookDefaultField::create([
+            'ParentID' => $webhook->ID,
+            'Name' => 'apiKey',
+            'Value' => '{{env.WEBHOOK_TEST_API_KEY}}',
+        ])->write();
+
+        WebhookDefaultField::create([
+            'ParentID' => $webhook->ID,
+            'Name' => 'authorization',
+            'Value' => 'Bearer {{env.WEBHOOK_TEST_API_KEY}}',
+        ])->write();
+
+        $submittedForm = SubmittedForm::create([
+            'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
+        ]);
+        $submittedForm->write();
+
+        SubmittedFormField::create([
+            'ParentID' => $submittedForm->ID,
+            'Name' => 'FirstName',
+            'Title' => 'First name',
+            'Value' => 'Sarah',
+        ])->write();
+
+        $history = [];
+        $mock = new MockHandler([
+            new Response(200, [], 'ok'),
+        ]);
+        $handler = HandlerStack::create($mock);
+        $handler->push(Middleware::history($history));
+        $client = new Client(['handler' => $handler]);
+
+        $dispatcher = new WebhookDispatcher($client, new WebhookPayloadBuilder(), new NullLogger());
+        $dispatcher->dispatch($submittedForm, ['FirstName' => 'Sarah']);
+
+        $this->assertCount(1, $history);
+        $body = json_decode((string) $history[0]['request']->getBody(), true);
+        $this->assertSame('secret-value', $body['apiKey']);
+        $this->assertSame('Bearer secret-value', $body['authorization']);
+
+        $result = SubmittedWebhook::get()->filter('SubmittedFormID', $submittedForm->ID)->first();
+        $this->assertNotNull($result);
+        $this->assertStringNotContainsString('secret-value', $result->RequestBody);
+        $this->assertStringContainsString('se...ue', $result->RequestBody);
+        $this->assertStringContainsString('Bearer se...ue', $result->RequestBody);
     }
 
     public function testDispatchPostsToEnvironmentSpecificEndpoint(): void

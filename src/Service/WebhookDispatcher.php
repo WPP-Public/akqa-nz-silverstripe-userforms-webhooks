@@ -226,12 +226,15 @@ class WebhookDispatcher
         $this->extend('updateWebhookRequestOptions', $options, $webhook, $submittedForm, $payload, $data);
         $webhook->extend('updateWebhookRequestOptions', $options, $submittedForm, $payload, $data);
 
+        /** @var WebhookVariableResolver $resolver */
+        $resolver = Injector::inst()->get(WebhookVariableResolver::class);
+
         $result = SubmittedWebhook::create();
         $result->WebhookID = $webhook->ID;
         $result->SubmittedFormID = $submittedForm->ID;
         $result->WebhookTitle = $webhook->getTitle();
         $result->EndpointURL = $endpointURL;
-        $result->RequestBody = $requestBody;
+        $result->RequestBody = $resolver->redactEnvValuesInString($requestBody);
 
         try {
             $response = $this->client->request('POST', $endpointURL, $options);

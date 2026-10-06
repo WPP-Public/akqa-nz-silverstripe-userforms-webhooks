@@ -143,4 +143,42 @@ class WebhookVariableResolver
     ): string {
         return $this->resolve($template, $this->getVariables($submittedForm, $webhook));
     }
+
+    /**
+     * Redact a secret for storage.
+     *
+     * Values shorter than five characters become "...". Longer values keep the
+     * first two and last two characters with "..." in between. Empty values
+     * are returned unchanged.
+     */
+    public function redactEnvValue(string $value): string
+    {
+        if ($value === '') {
+            return '';
+        }
+
+        if (strlen($value) < 5) {
+            return '...';
+        }
+
+        return substr($value, 0, 2) . '...' . substr($value, -2);
+    }
+
+    /**
+     * Replace allowlisted environment variable values in a string with redacted forms.
+     *
+     * Used when persisting webhook request bodies so secrets are not stored in full.
+     */
+    public function redactEnvValuesInString(string $content): string
+    {
+        foreach ($this->getAllowedEnvVariables() as $envValue) {
+            if ($envValue === '') {
+                continue;
+            }
+
+            $content = str_replace($envValue, $this->redactEnvValue($envValue), $content);
+        }
+
+        return $content;
+    }
 }
