@@ -316,6 +316,70 @@ class WebhookPayloadBuilderTest extends SapphireTest
         ], $payload);
     }
 
+    public function testBuildCoercesNullValuesToEmptyString(): void
+    {
+        $form = UserDefinedForm::create(['Title' => 'Contact']);
+        $form->write();
+
+        EditableTextField::create([
+            'Name' => 'Phone',
+            'Title' => 'Phone',
+            'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
+        ])->write();
+
+        $submittedForm = SubmittedForm::create([
+            'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
+        ]);
+        $submittedForm->write();
+
+        SubmittedFormField::create([
+            'ParentID' => $submittedForm->ID,
+            'Name' => 'Phone',
+            'Title' => 'Phone',
+            'Value' => null,
+        ])->write();
+
+        $builder = new WebhookPayloadBuilder();
+        $payload = $builder->build($submittedForm, $form->Fields());
+
+        $this->assertSame('', $payload['phone']);
+    }
+
+    public function testBuildPreservesJsonObjectValues(): void
+    {
+        $form = UserDefinedForm::create(['Title' => 'Contact']);
+        $form->write();
+
+        EditableTextField::create([
+            'Name' => 'Metadata',
+            'Title' => 'Metadata',
+            'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
+        ])->write();
+
+        $submittedForm = SubmittedForm::create([
+            'ParentID' => $form->ID,
+            'ParentClass' => UserDefinedForm::class,
+        ]);
+        $submittedForm->write();
+
+        SubmittedFormField::create([
+            'ParentID' => $submittedForm->ID,
+            'Name' => 'Metadata',
+            'Title' => 'Metadata',
+            'Value' => '{"answers":["Family","2026-10-01"]}',
+        ])->write();
+
+        $builder = new WebhookPayloadBuilder();
+        $payload = $builder->build($submittedForm, $form->Fields());
+
+        $this->assertSame([
+            'answers' => ['Family', '2026-10-01'],
+        ], $payload['metadata']);
+    }
+
     public function testApplyDefaultFieldsSupportsVariablesAndDotSyntax(): void
     {
         $form = UserDefinedForm::create(['Title' => 'Contact']);
