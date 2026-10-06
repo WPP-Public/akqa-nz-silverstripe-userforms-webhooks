@@ -1,5 +1,7 @@
 # Silverstripe UserForms Webhooks
 
+[![CI](https://github.com/WPP-Public/akqa-nz-silverstripe-userforms-webhooks/actions/workflows/ci.yml/badge.svg)](https://github.com/WPP-Public/akqa-nz-silverstripe-userforms-webhooks/actions/workflows/ci.yml)
+
 Posts [Silverstripe UserForms](https://github.com/silverstripe/silverstripe-userforms) submissions to configurable HTTP webhooks.
 
 Webhook endpoints, headers, default fields, and conditional rules are managed in the CMS. Each fired request is logged against the submission with status code, request body, and response body.
