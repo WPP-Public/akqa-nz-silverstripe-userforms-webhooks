@@ -157,6 +157,31 @@ class WebhookVariableResolverTest extends SapphireTest
             ])
         );
     }
+
+    public function testRedactEnvValueKeepsFirstAndLastTwoCharacters(): void
+    {
+        $resolver = new WebhookVariableResolver();
+
+        $this->assertSame('se...ue', $resolver->redactEnvValue('secret-value'));
+        $this->assertSame('ab...ij', $resolver->redactEnvValue('abcdefghij'));
+        $this->assertSame('...', $resolver->redactEnvValue('abcd'));
+        $this->assertSame('', $resolver->redactEnvValue(''));
+    }
+
+    public function testRedactEnvValuesInStringReplacesAllowlistedValues(): void
+    {
+        Config::modify()->set(WebhookVariableResolver::class, 'allowed_env_variables', [
+            'WEBHOOK_TEST_API_KEY',
+        ]);
+        Environment::setEnv('WEBHOOK_TEST_API_KEY', 'abcdefghij');
+
+        $resolver = new WebhookVariableResolver();
+
+        $this->assertSame(
+            '{"apiKey":"ab...ij","auth":"Bearer ab...ij"}',
+            $resolver->redactEnvValuesInString('{"apiKey":"abcdefghij","auth":"Bearer abcdefghij"}')
+        );
+    }
 }
 
 /**
