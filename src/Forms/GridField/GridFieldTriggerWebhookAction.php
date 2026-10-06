@@ -168,8 +168,9 @@ class GridFieldTriggerWebhookAction implements
                 ]
             );
 
-        if (Controller::has_curr()) {
-            Controller::curr()->getResponse()->addHeader(
+        $controller = Controller::curr();
+        if ($controller) {
+            $controller->getResponse()->addHeader(
                 'X-Status',
                 rawurlencode($message)
             );

@@ -347,11 +347,12 @@ class EditableWebhook extends DataObject
         }
 
         $sessionNamespace = $this->config()->get('session_namespace') ?: CMSMain::class;
-        if (!Controller::has_curr()) {
+        $controller = Controller::curr();
+        if (!$controller) {
             return null;
         }
 
-        $formID = Controller::curr()->getRequest()->getSession()->get($sessionNamespace . '.currentPage');
+        $formID = $controller->getRequest()->getSession()->get($sessionNamespace . '.currentPage');
         if ($formID) {
             return UserDefinedForm::get()->byID($formID);
         }
@@ -471,8 +472,9 @@ class EditableWebhook extends DataObject
             return $args[1]['Form'];
         }
 
-        if (Controller::has_curr() && Controller::curr() instanceof CMSMain) {
-            return Controller::curr()->currentRecord();
+        $controller = Controller::curr();
+        if ($controller instanceof CMSMain) {
+            return $controller->currentRecord();
         }
 
         return null;
